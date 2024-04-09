@@ -102,21 +102,6 @@ class VirusOnNetwork(mesa.Model):
         self.running = True
         self.datacollector.collect(self)
 
-        # # Create Hospital Agents
-        # existing_nodes = set(self.grid.get_all_cell_contents())
-        # available_nodes = [node for node in self.G.nodes() if node not in existing_nodes]
-
-        # for _ in range(self.num_hospital):
-        #     if available_nodes:
-        #         chosen_node = self.random.choice(available_nodes)
-        #         hospital_agent = HospitalAgent('H' + str(chosen_node), self, 
-        #                                         self.num_hospital, self.range_hospital)
-        #         self.schedule.add(hospital_agent)
-        #         self.grid.place_agent(hospital_agent, chosen_node)
-        #         available_nodes.remove(chosen_node)
-        #     else:
-        #         # Handle case where there are no available nodes
-        #         pass
 
     def resistant_susceptible_ratio(self):
         try:
@@ -211,19 +196,11 @@ class VirusAgent(mesa.Agent):
         else:
             self.state = State.INFECTED
 
-
     def try_check_situation(self):
         if (self.random.random() < self.virus_check_frequency) and (
             self.state is State.INFECTED
         ):
             return self.try_remove_infection()
-
-
-    def treat_in_hospital(self):
-        # Logic when treated by a hospital
-        # Example: the agent recovers and gains resistance
-        self.state = State.SUSCEPTIBLE
-        self.try_gain_resistance()
 
     def step(self):
         if self.state is State.INFECTED:
