@@ -1,20 +1,8 @@
-# RJABM
+# RJABM - ABM on Echo Chambers
 
 ## Summary
 
-This model extends on the NetLogo model "Virus on Network". It demonstrates the spread of a virus through a network and follows the SIR model, commonly seen in epidemiology.
-
-The SIR model is one of the simplest compartmental models, and many models are derivatives of this basic form. The original model consists of three compartments:
-
-S: The number of susceptible individuals. When a susceptible and an infectious individual come into "infectious contact", the susceptible individual contracts the disease and transitions to the infectious compartment.
-
-I: The number of infectious individuals. These are individuals who have been infected and are capable of infecting susceptible individuals.
-
-R for the number of removed (and immune) or deceased individuals. These are individuals who have been infected and have either recovered from the disease and entered the removed compartment, or died. It is assumed that the number of deaths is negligible with respect to the total population. This compartment may also be called "recovered" or "resistant".
-
-For more information about this model, read the NetLogo's web page: http://ccl.northwestern.edu/netlogo/models/VirusonaNetwork.
-
-Our model adds a **Hospital Agent** to act as an environmental factor that offers the nodes with another dimension of interaction that affects their state transitions. The hospital agent symbolizes healthcare intervention within the network. Nodes within the neighborhood of the hospital agent are offered additional opportunities for state change. 
+We are building a model that investigates how the tolerance for opinion difference and the recommender system influence the formation of opinion clusters and the emergence of echo chambers over time.
 
 JavaScript library used in this example to render the network: [d3.js](https://d3js.org/).
 
@@ -23,7 +11,7 @@ JavaScript library used in this example to render the network: [d3.js](https://d
 To install the dependencies use pip and the requirements.txt in this directory. e.g.
 
 ```
-    $ pip install -r requirements.txt
+    pip install -r requirements.txt
 ```
 
 ## How to Run
@@ -31,7 +19,7 @@ To install the dependencies use pip and the requirements.txt in this directory. 
 To run the model interactively, run ``mesa runserver`` in this directory. e.g.
 
 ```
-    $ mesa runserver
+    mesa runserver
 ```
 
 Then open your browser to [http://127.0.0.1:8521/](http://127.0.0.1:8521/) and press Reset, then Run.
@@ -41,7 +29,7 @@ or
 Directly run the file ``run.py`` in the terminal. e.g.
 
 ```
-    $ python run.py
+    python run.py
 ```
 
 
@@ -53,15 +41,4 @@ Directly run the file ``run.py`` in the terminal. e.g.
 
 ## Further Reading
 
-The full tutorial describing how the model is built can be found at:
-https://mesa.readthedocs.io/en/latest/tutorials/intro_tutorial.html
-
-
-[Stonedahl, F. and Wilensky, U. (2008). NetLogo Virus on a Network model](http://ccl.northwestern.edu/netlogo/models/VirusonaNetwork).
-Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
-
-
-[Wilensky, U. (1999). NetLogo](http://ccl.northwestern.edu/netlogo/)
-Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
-
-Hethcote, H. W. (1989). Three basic epidemiological models. In Applied mathematical ecology (pp. 119-144). Berlin, Heidelberg: Springer Berlin Heidelberg.
+Deffuant, G., Neau, D., Amblard, F., and Weisbuch, G. (2000). Mixing beliefs among interacting agents. Adv. Comp. Syst., 03(01n04):87–98.
