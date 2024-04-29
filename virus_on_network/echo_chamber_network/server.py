@@ -21,7 +21,7 @@ def network_portrayal(G):
         return f"Agent id: {agent.unique_id}<br>Opinion: {agent.opinion:.2f}<br>Tolerance: {agent.tolerance:.2f}"
 
     portrayal = {
-        "nodes": [{"size": 6, "color": node_color(agent), "tooltip": get_tooltip(agent)} for (_, agent) in G.nodes.data('agent')],
+        "nodes": [{"size": 6, "color": node_color(agent), "tooltip": get_tooltip(agent)} for (_, [agent]) in G.nodes.data('agent')],
         "edges": [{"source": source, "target": target, "color": edge_color(source, target), "width": edge_width(source, target)} for (source, target) in G.edges],
     }
     return portrayal
@@ -36,7 +36,7 @@ network = mesa.visualization.NetworkModule(portrayal_method=network_portrayal,
 # ])
 
 model_params = {
-    "num_agents": mesa.visualization.Slider("Number of agents", 20, 10, 200, 1),
+    "num_agents": mesa.visualization.Slider("Number of agents", 100, 10, 200, 1),
     "avg_degree": mesa.visualization.Slider("Average Node Degree", 3, 1, 10, 1),
     "tolerance": mesa.visualization.Slider("Tolerance for Opinion Difference", 0.3, 0.0, 1.0, 0.05),
     "num_recommended": mesa.visualization.Slider("Number of Recommended Agents", 5, 1, 15, 1)

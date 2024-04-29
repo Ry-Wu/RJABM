@@ -33,7 +33,7 @@ class OpinionAgent(mesa.Agent):
         '''next opinion state is determined by the accumulation of pairwise
             interactions of agent x and all neighbors.
         '''
-        neighbors = self.model.grid.get_neighborhood(self.pos)
+        neighbors = self.model.grid.get_neighbors(self.pos)
         
         for neighbor in neighbors:
             # if abs(neighbor.opinion - self.opinion) <= self.tolerance:
@@ -63,7 +63,7 @@ class OpinionAgent(mesa.Agent):
         else:
             direction = OpinionState.POSITIVE if self.opinion > 0.5 else OpinionState.NEGATIVE
 
-        potential_connections = [a for a in self.model.schedule.agents if a not in current_neighbors and a.opinion_state == direction]
+        potential_connections = [a for a in self.model.schedule.agents if a not in current_neighbors and a.opinion == direction]
         for agent in random.sample(potential_connections, min(len(potential_connections), self.model.num_recommended)):
             if abs(agent.opinion - self.opinion) < self.tolerance:
                 self.model.G.add_edge(self.pos, agent.pos)
