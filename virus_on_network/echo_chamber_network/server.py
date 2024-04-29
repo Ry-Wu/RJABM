@@ -26,6 +26,12 @@ def network_portrayal(G):
     }
     return portrayal
 
+def get_num_of_clusters(model):
+    num_of_clusters = model.num_clusters
+
+    return "Number of Clusters: {}".format(
+        num_of_clusters
+    )
 
 network = mesa.visualization.NetworkModule(portrayal_method=network_portrayal,
                                            canvas_height=500, canvas_width=500)
@@ -43,6 +49,8 @@ model_params = {
     "num_neighbor_conn": mesa.visualization.Slider("Number of Neighbor's Connections", 1, 1, 5, 1)
 }
 
-server = mesa.visualization.ModularServer(EchoChamberModel, [network],
-                                          "Echo Chamber Model", model_params)
+server = mesa.visualization.ModularServer(model_cls=EchoChamberModel, 
+                                          visualization_elements=[network, get_num_of_clusters],
+                                          name="Echo Chamber Model", 
+                                          model_params=model_params)
 server.port = 8521

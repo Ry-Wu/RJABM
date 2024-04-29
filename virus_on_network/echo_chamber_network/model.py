@@ -3,6 +3,8 @@ import random
 
 import mesa
 import networkx as nx
+from networkx.algorithms.components import connected_components
+
 
 class OpinionState(Enum):
     NEGATIVE = 0
@@ -81,7 +83,16 @@ class EchoChamberModel(mesa.Model):
         self.G = nx.erdos_renyi_graph(n=self.num_agents, p=self.avg_degree/(self.num_agents-1))
         self.grid = mesa.space.NetworkGrid(self.G)
         self.schedule = mesa.time.RandomActivation(self)
+        self.num_clusters = nx.number_connected_components(self.G)
         self.init_agents()
+
+        self.datacollector = mesa.DataCollector(
+            {
+                "Number_of_Clusters": lambda m: nx.number_connected_components(m.G)
+            }
+        )
+        self.running = True
+        self.datacollector.collect(self)
 
     def init_agents(self):
         for i, node in enumerate(self.G.nodes()):
@@ -91,5 +102,9 @@ class EchoChamberModel(mesa.Model):
             self.grid.place_agent(a, node)
 
     def step(self):
+        
         self.schedule.step()
+        self.num_clusters = nx.number_connected_components(self.G)
+        self.datacollector.collect(self)
+        print(f"Model Step: {self._steps} at Model Time: {self._time}")
 
