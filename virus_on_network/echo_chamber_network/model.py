@@ -73,7 +73,15 @@ class OpinionAgent(mesa.Agent):
 
 
 class EchoChamberModel(mesa.Model):
-    def __init__(self, num_agents=20, avg_degree=3, tolerance=0.3, num_recommended=5, num_neighbor_conn=1):
+
+    schedule_types = {
+        "Sequential": mesa.time.BaseScheduler,
+        "Random": mesa.time.RandomActivation,
+        "Simultaneous": mesa.time.SimultaneousActivation,
+    }
+    
+    def __init__(self, num_agents=20, avg_degree=3, tolerance=0.3, 
+                 num_recommended=5, num_neighbor_conn=1, schedule_type="Random"):
         super().__init__()
         self.num_agents = num_agents
         self.avg_degree = avg_degree
@@ -84,6 +92,8 @@ class EchoChamberModel(mesa.Model):
         self.grid = mesa.space.NetworkGrid(self.G)
         self.schedule = mesa.time.RandomActivation(self)
         self.num_clusters = nx.number_connected_components(self.G)
+        self.schedule_type = schedule_type
+        self.schedule = self.schedule_types[self.schedule_type](self)
         self.init_agents()
 
         self.datacollector = mesa.DataCollector(

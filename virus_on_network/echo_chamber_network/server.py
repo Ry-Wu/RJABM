@@ -46,7 +46,9 @@ model_params = {
     "avg_degree": mesa.visualization.Slider("Average Node Degree", 3, 1, 10, 1),
     "tolerance": mesa.visualization.Slider("Tolerance for Opinion Difference", 0.3, 0.0, 1.0, 0.05),
     "num_recommended": mesa.visualization.Slider("Number of Recommended Agents", 5, 1, 15, 1),
-    "num_neighbor_conn": mesa.visualization.Slider("Number of Neighbor's Connections", 1, 1, 5, 1)
+    "num_neighbor_conn": mesa.visualization.Slider("Number of Neighbor's Connections", 1, 1, 5, 1),
+    "schedule_type": mesa.visualization.Choice("Scheduler type",value="Random",
+                                                choices=list(EchoChamberModel.schedule_types.keys()))
 }
 
 server = mesa.visualization.ModularServer(model_cls=EchoChamberModel, 

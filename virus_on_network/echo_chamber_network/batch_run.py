@@ -13,7 +13,8 @@ parameters = {"num_agents": 20,
               "avg_degree": 3,
               "tolerance": 0,
               "num_recommended": 1,
-              "num_neighbor_conn": 1
+              "num_neighbor_conn": 1,
+              "schedule_type": "Random"
               } 
 
 # what to run and what to collect
