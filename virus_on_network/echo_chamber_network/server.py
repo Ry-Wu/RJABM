@@ -36,10 +36,11 @@ network = mesa.visualization.NetworkModule(portrayal_method=network_portrayal,
 # ])
 
 model_params = {
-    "num_agents": mesa.visualization.Slider("Number of agents", 100, 10, 200, 1),
+    "num_agents": mesa.visualization.Slider("Number of agents", 15, 10, 200, 1),
     "avg_degree": mesa.visualization.Slider("Average Node Degree", 3, 1, 10, 1),
     "tolerance": mesa.visualization.Slider("Tolerance for Opinion Difference", 0.3, 0.0, 1.0, 0.05),
-    "num_recommended": mesa.visualization.Slider("Number of Recommended Agents", 5, 1, 15, 1)
+    "num_recommended": mesa.visualization.Slider("Number of Recommended Agents", 5, 1, 15, 1),
+    "num_neighbor_conn": mesa.visualization.Slider("Number of Neighbor's Connections", 1, 1, 5, 1)
 }
 
 server = mesa.visualization.ModularServer(EchoChamberModel, [network],

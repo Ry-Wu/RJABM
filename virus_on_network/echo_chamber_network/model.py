@@ -38,19 +38,20 @@ class OpinionAgent(mesa.Agent):
         for neighbor in neighbors:
             # if abs(neighbor.opinion - self.opinion) <= self.tolerance:
             self.opinion += self.tolerance * (neighbor.opinion - self.opinion)
+            self.opinion = round(self.opinion, 1)
 
     def break_connections(self):
         '''break connections if pairwise opinion differences are larger than tolerance'''
         current_neighbors = self.model.grid.get_neighbors(self.pos)
         for neighbor in current_neighbors:
-            if abs(neighbor.opinion - self.opinion) > 1 - self.tolerance:
+            if abs(neighbor.opinion - self.opinion) > self.tolerance:
                 self.model.G.remove_edge(self.pos, neighbor.pos)
 
     def make_connections_neighbors(self):
         '''make new connections: neighbors' neighbors'''
         current_neighbors = self.model.grid.get_neighbors(self.pos)
         potential_connections = [a for a in self.model.schedule.agents if a not in current_neighbors]
-        for agent in potential_connections:
+        for agent in random.sample(potential_connections, min(len(potential_connections), self.model.num_neighbor_conn)):
             if abs(agent.opinion - self.opinion) < self.tolerance:
                 self.model.G.add_edge(self.pos, agent.pos)
 
@@ -70,12 +71,13 @@ class OpinionAgent(mesa.Agent):
 
 
 class EchoChamberModel(mesa.Model):
-    def __init__(self, num_agents=20, avg_degree=3, tolerance=0.3, num_recommended=5):
+    def __init__(self, num_agents=20, avg_degree=3, tolerance=0.3, num_recommended=5, num_neighbor_conn=1):
         super().__init__()
         self.num_agents = num_agents
         self.avg_degree = avg_degree
         self.tolerance = tolerance
         self.num_recommended = num_recommended
+        self.num_neighbor_conn = num_neighbor_conn
         self.G = nx.erdos_renyi_graph(n=self.num_agents, p=self.avg_degree/(self.num_agents-1))
         self.grid = mesa.space.NetworkGrid(self.G)
         self.schedule = mesa.time.RandomActivation(self)
