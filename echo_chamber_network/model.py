@@ -236,30 +236,25 @@ class EchoChamberModel(mesa.Model):
         for agent in self.schedule.agents:
             node = agent.unique_id
             neighbors = list(self.G.neighbors(node))
-            similar_opinion_neighbors = []
-            for n in neighbors:
-                if isinstance(self.G.nodes[n]['agent'], list):
-                    if any(abs(a.opinion - agent.opinion) < self.tolerance for a in self.G.nodes[n]['agent']):
-                        similar_opinion_neighbors.append(n)
-                else:
-                    if abs(self.G.nodes[n]['agent'].opinion - agent.opinion) < self.tolerance:
-                        similar_opinion_neighbors.append(n)
-            
+            agent_state = self.determine_opinion_state(agent)  # Use existing function to determine the agent's opinion state
+
+            # Filter neighbors based on matching opinion state
+            state_similar_neighbors = [n for n in neighbors if self.determine_opinion_state(self.schedule.agents[n]) == agent_state]
+
             if len(neighbors) < 2:
                 opinion_clustering_coefficients[node] = 0.0
             else:
                 connected_pairs = 0
-                for i in range(len(similar_opinion_neighbors)):
-                    for j in range(i+1, len(similar_opinion_neighbors)):
-                        if self.G.has_edge(similar_opinion_neighbors[i], similar_opinion_neighbors[j]):
+                for i in range(len(state_similar_neighbors)):
+                    for j in range(i + 1, len(state_similar_neighbors)):
+                        if self.G.has_edge(state_similar_neighbors[i], state_similar_neighbors[j]):
                             connected_pairs += 1
-                
-                possible_pairs = len(similar_opinion_neighbors) * (len(similar_opinion_neighbors) - 1) / 2
+
+                possible_pairs = len(state_similar_neighbors) * (len(state_similar_neighbors) - 1) / 2
                 if possible_pairs > 0:
                     opinion_clustering_coefficients[node] = connected_pairs / possible_pairs
                 else:
                     opinion_clustering_coefficients[node] = 0.0
-        
+
         avg_opinion_clustering_coef = sum(opinion_clustering_coefficients.values()) / len(opinion_clustering_coefficients)
         return avg_opinion_clustering_coef
-
