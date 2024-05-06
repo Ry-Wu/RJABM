@@ -1,5 +1,6 @@
 from enum import Enum
 import random
+import numpy as np
 
 import mesa
 import networkx as nx
@@ -61,15 +62,37 @@ class OpinionAgent(mesa.Agent):
         '''make new connections: recommender system
         '''
         current_neighbors = self.model.grid.get_neighbors(self.pos)
+
         if self.opinion == 0.5:
             direction = OpinionState.POSITIVE if sum(1 for n in current_neighbors if n.opinion > 0.5) >= len(current_neighbors)/2 else OpinionState.NEGATIVE
         else:
             direction = OpinionState.POSITIVE if self.opinion > 0.5 else OpinionState.NEGATIVE
 
-        potential_connections = [a for a in self.model.schedule.agents if a not in current_neighbors and a.opinion == direction]
-        for agent in random.sample(potential_connections, min(len(potential_connections), self.model.num_recommended)):
+        agents_rec_probs = {}
+        prob_sum = 0
+        for a in self.model.schedule.agents:
+            if a not in current_neighbors:
+                rec_prob = 1 / (abs(a.opinion - self.opinion) + 1)
+                agents_rec_probs[a] = rec_prob
+                prob_sum += rec_prob
+
+        
+        agents_select_probs =  {agent: prob / prob_sum for agent, prob in agents_rec_probs.items()}
+        
+        selected_agents = np.random.choice(list(agents_select_probs.keys()), 
+                                                size=min(len(agents_select_probs), self.model.num_recommended), 
+                                                p=list(agents_select_probs.values()), 
+                                                replace=False)
+
+        for agent in selected_agents:
             if abs(agent.opinion - self.opinion) < self.tolerance:
                 self.model.G.add_edge(self.pos, agent.pos)
+
+
+        # potential_connections = [a for a in self.model.schedule.agents if a not in current_neighbors and a.opinion == direction]
+        # for agent in random.sample(potential_connections, min(len(potential_connections), self.model.num_recommended)):
+        #     if abs(agent.opinion - self.opinion) < self.tolerance:
+        #         self.model.G.add_edge(self.pos, agent.pos)
 
 
 class EchoChamberModel(mesa.Model):
