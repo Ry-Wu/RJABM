@@ -128,6 +128,7 @@ class EchoChamberModel(mesa.Model):
                 "Opinion_Clustering_Coefficient": lambda m: m.calculate_opinion_clustering_coefficient(),
                 "Opinion_Homophily": lambda m: m.calculate_opinion_homophily(),
                 "Opinion_Modularity": lambda m: m.calculate_opinion_modularity(),
+                "Proportion_of_Uniform_Neighbors": lambda m: m.rate_uniform_opinion_neighbors()
             }
         )
         self.running = True
@@ -140,8 +141,40 @@ class EchoChamberModel(mesa.Model):
             self.schedule.add(a)
             self.grid.place_agent(a, node)
 
+    def categorize_opinion(self, opinion):
+        if opinion < 0.5:
+            return OpinionState.NEGATIVE
+        elif opinion == 0.5:
+            return OpinionState.NEUTRAL
+        else:
+            return OpinionState.POSITIVE
+
+    def rate_uniform_opinion_neighbors(self):
+        uniform_count = 0
+        for node in self.G.nodes():
+            agent = self.grid.get_cell_list_contents([node])[0]
+            neighbors = self.G.neighbors(node)
+            num_noneighbors = 0
+            if not neighbors:
+                num_noneighbors += 1
+                continue  # Skip if no neighbors
+
+            # Fetch and categorize the opinion states of all neighbors
+            neighbor_states = [self.categorize_opinion(self.grid.get_cell_list_contents([n])[0].opinion) for n in neighbors]
+            node_state = self.categorize_opinion(agent.opinion)
+
+            # Check if all neighbor states match the node's state
+            if all(state == node_state for state in neighbor_states):
+                uniform_count += 1
+        
+        uniform_rate = uniform_count / (self.num_agents - num_noneighbors) 
+
+
+        return uniform_rate
+
     def step(self):
         self.schedule.step()
+        rate_uniform = self.rate_uniform_opinion_neighbors()
         self.num_clusters = nx.number_connected_components(self.G)
         self.datacollector.collect(self)
         # print(f"Model Step: {self._steps} at Model Time: {self._time}")
