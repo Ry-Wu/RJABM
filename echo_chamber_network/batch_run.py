@@ -10,11 +10,11 @@ import pandas as pd
 # parameters that will remain constant
 # parameters you want to vary
 parameters = {"num_agents": 20,
-              "avg_degree": 3,
-              "tolerance": 0,
-              "num_recommended": 1,
+              "avg_degree": 2,
+              "tolerance": [0.1, 0.7],
+              "num_recommended": [0, 7],
               "num_neighbor_conn": 1,
-              "schedule_type": "Random"
+              "schedule_type": "Sequential"
               } 
 
 # what to run and what to collect
@@ -22,10 +22,9 @@ parameters = {"num_agents": 20,
 # max_steps is how long to run the model
 results = batch_run(EchoChamberModel, 
                     parameters,
-                    iterations=3,  
-                    max_steps=5, 
+                    iterations=50,  
+                    max_steps=10, 
                     data_collection_period = 1) #how often do you want to pull the data
-
 
 
 
