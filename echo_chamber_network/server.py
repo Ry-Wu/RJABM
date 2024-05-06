@@ -32,7 +32,12 @@ def get_num_of_clusters(model):
     return "Number of Clusters: {}".format(
         num_of_clusters
     )
+def get_rate_of_uniform(model):
+    rate_uniform = model.rate_uniform_opinion_neighbors()
 
+    return "Proportion of Agents Connected to Uniform Neighbors: {}".format(
+        rate_uniform
+    )
 def get_opinion_homophily(model):
     opinion_homophily = model.datacollector.get_model_vars_dataframe()["Opinion_Homophily"].iloc[-1]
     return "Opinion Homophily: {:.2f}".format(opinion_homophily)
@@ -64,7 +69,8 @@ server = mesa.visualization.ModularServer(model_cls=EchoChamberModel,
                                           visualization_elements=[network, get_num_of_clusters,
                                                                   get_opinion_homophily,
                                                                   get_opinion_modularity,
-                                                                  get_clustering_coef],
+                                                                  get_clustering_coef,
+                                                                  get_rate_of_uniform],
                                           name="Echo Chamber Model", 
                                           model_params=model_params)
 server.port = 8521
