@@ -154,13 +154,30 @@ class EchoChamberModel(mesa.Model):
             agent1 = self.schedule.agents[node1]
             agent2 = self.schedule.agents[node2]
             total_edges += 1
-            if abs(agent1.opinion - agent2.opinion) < self.tolerance:
+
+            # Determine the majority opinion direction or exact state for each agent
+            direction1 = self.determine_opinion_state(agent1)
+            direction2 = self.determine_opinion_state(agent2)
+
+            # Check if both agents have the same opinion state
+            if direction1 == direction2:
                 same_opinion_edges += 1
-        if total_edges > 0:
-            homophily = same_opinion_edges / total_edges
-        else:
-            homophily = 0
+
+        homophily = same_opinion_edges / total_edges if total_edges > 0 else 0
         return homophily
+
+    def determine_opinion_state(self, agent):
+        if agent.opinion == 0.5:
+            return OpinionState.NEUTRAL
+
+        neighbors = self.grid.get_neighbors(agent.pos)
+        # determine the majority opinion direction based on neighbors
+        if sum(1 for n in neighbors if n.opinion > 0.5) > len(neighbors) / 2:
+            return OpinionState.POSITIVE
+        elif sum(1 for n in neighbors if n.opinion < 0.5) > len(neighbors) / 2:
+            return OpinionState.NEGATIVE
+        else:
+            return OpinionState.NEUTRAL
 
     def calculate_opinion_modularity(self):
         opinion_communities = {}
