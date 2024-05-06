@@ -25,8 +25,8 @@ class OpinionAgent(mesa.Agent):
     def step(self):
         '''At each step, each agent updates its opinion based on neighbors,
         and make new or break connections.'''
-        print(self.pos)
-        print(self.model.grid.get_neighbors(self.pos))
+        # print(self.pos)
+        # print(self.model.grid.get_neighbors(self.pos))
         self.update_opinion()
         self.break_connections()
         self.make_connections_neighbors()
@@ -79,10 +79,13 @@ class OpinionAgent(mesa.Agent):
         
         agents_select_probs =  {agent: prob / prob_sum for agent, prob in agents_rec_probs.items()}
         
-        selected_agents = np.random.choice(list(agents_select_probs.keys()), 
+        try:
+            selected_agents = np.random.choice(list(agents_select_probs.keys()), 
                                                 size=min(len(agents_select_probs), self.model.num_recommended), 
                                                 p=list(agents_select_probs.values()), 
                                                 replace=False)
+        except:
+            return
 
         for agent in selected_agents:
             if abs(agent.opinion - self.opinion) < self.tolerance:
@@ -121,7 +124,10 @@ class EchoChamberModel(mesa.Model):
 
         self.datacollector = mesa.DataCollector(
             {
-                "Number_of_Clusters": lambda m: nx.number_connected_components(m.G)
+                "Number_of_Clusters": lambda m: nx.number_connected_components(m.G),
+                "Opinion_Clustering_Coefficient": lambda m: m.calculate_opinion_clustering_coefficient(),
+                "Opinion_Homophily": lambda m: m.calculate_opinion_homophily(),
+                "Opinion_Modularity": lambda m: m.calculate_opinion_modularity(),
             }
         )
         self.running = True
@@ -135,9 +141,75 @@ class EchoChamberModel(mesa.Model):
             self.grid.place_agent(a, node)
 
     def step(self):
-        
         self.schedule.step()
         self.num_clusters = nx.number_connected_components(self.G)
         self.datacollector.collect(self)
-        print(f"Model Step: {self._steps} at Model Time: {self._time}")
+        # print(f"Model Step: {self._steps} at Model Time: {self._time}")
+    
+    def calculate_opinion_homophily(self):
+        same_opinion_edges = 0
+        total_edges = 0
+        for edge in self.G.edges():
+            node1, node2 = edge
+            agent1 = self.schedule.agents[node1]
+            agent2 = self.schedule.agents[node2]
+            total_edges += 1
+            if abs(agent1.opinion - agent2.opinion) < self.tolerance:
+                same_opinion_edges += 1
+        if total_edges > 0:
+            homophily = same_opinion_edges / total_edges
+        else:
+            homophily = 0
+        return homophily
+
+    def calculate_opinion_modularity(self):
+        opinion_communities = {}
+        for agent in self.schedule.agents:
+            if agent.opinion > 0.5:
+                opinion_communities[agent.unique_id] = 1  # Positive opinion community
+            elif agent.opinion < 0.5:
+                opinion_communities[agent.unique_id] = 0  # Negative opinion community
+            else:
+                opinion_communities[agent.unique_id] = 2  # Neutral opinion community
+
+        # Create a list of sets representing the opinion-based communities
+        community_sets = [set() for _ in range(3)]  # Initialize 3 empty sets for positive, negative, and neutral communities
+        for node, community_id in opinion_communities.items():
+            community_sets[community_id].add(node)
+
+        # Calculate modularity using the opinion-based communities
+        modularity = nx.algorithms.community.modularity(self.G, communities=community_sets)
+        return modularity
+
+    def calculate_opinion_clustering_coefficient(self):
+        opinion_clustering_coefficients = {}
+        for agent in self.schedule.agents:
+            node = agent.unique_id
+            neighbors = list(self.G.neighbors(node))
+            similar_opinion_neighbors = []
+            for n in neighbors:
+                if isinstance(self.G.nodes[n]['agent'], list):
+                    if any(abs(a.opinion - agent.opinion) < self.tolerance for a in self.G.nodes[n]['agent']):
+                        similar_opinion_neighbors.append(n)
+                else:
+                    if abs(self.G.nodes[n]['agent'].opinion - agent.opinion) < self.tolerance:
+                        similar_opinion_neighbors.append(n)
+            
+            if len(neighbors) < 2:
+                opinion_clustering_coefficients[node] = 0.0
+            else:
+                connected_pairs = 0
+                for i in range(len(similar_opinion_neighbors)):
+                    for j in range(i+1, len(similar_opinion_neighbors)):
+                        if self.G.has_edge(similar_opinion_neighbors[i], similar_opinion_neighbors[j]):
+                            connected_pairs += 1
+                
+                possible_pairs = len(similar_opinion_neighbors) * (len(similar_opinion_neighbors) - 1) / 2
+                if possible_pairs > 0:
+                    opinion_clustering_coefficients[node] = connected_pairs / possible_pairs
+                else:
+                    opinion_clustering_coefficients[node] = 0.0
+        
+        avg_opinion_clustering_coef = sum(opinion_clustering_coefficients.values()) / len(opinion_clustering_coefficients)
+        return avg_opinion_clustering_coef
 

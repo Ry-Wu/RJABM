@@ -33,13 +33,22 @@ def get_num_of_clusters(model):
         num_of_clusters
     )
 
+def get_opinion_homophily(model):
+    opinion_homophily = model.datacollector.get_model_vars_dataframe()["Opinion_Homophily"].iloc[-1]
+    return "Opinion Homophily: {:.2f}".format(opinion_homophily)
+
+def get_opinion_modularity(model):
+    opinion_modularity = model.datacollector.get_model_vars_dataframe()["Opinion_Modularity"].iloc[-1]
+    return "Opinion Modularity: {:.2f}".format(opinion_modularity)
+
+def get_clustering_coef(model):
+    clustering_coef = model.datacollector.get_model_vars_dataframe()["Opinion_Clustering_Coefficient"].iloc[-1]
+    return "Clustering Coefficient: {:.2f}".format(clustering_coef)
+
+
 network = mesa.visualization.NetworkModule(portrayal_method=network_portrayal,
                                            canvas_height=500, canvas_width=500)
 
-# chart = mesa.visualization.ChartModule([
-#     {"Label": "Positive Opinion", "Color": "#FF0000"},
-#     {"Label": "Negative Opinion", "Color": "#008000"},
-# ])
 
 model_params = {
     "num_agents": mesa.visualization.Slider("Number of agents", 15, 10, 200, 1),
@@ -52,7 +61,10 @@ model_params = {
 }
 
 server = mesa.visualization.ModularServer(model_cls=EchoChamberModel, 
-                                          visualization_elements=[network, get_num_of_clusters],
+                                          visualization_elements=[network, get_num_of_clusters,
+                                                                  get_opinion_homophily,
+                                                                  get_opinion_modularity,
+                                                                  get_clustering_coef],
                                           name="Echo Chamber Model", 
                                           model_params=model_params)
 server.port = 8521
