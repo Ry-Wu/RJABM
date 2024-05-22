@@ -9,11 +9,12 @@ import pandas as pd
 # Here you will have elements that you want to sweep, eg:
 # parameters that will remain constant
 # parameters you want to vary
-parameters = {"num_agents": 20,
+parameters = {"num_agents": [50, 150], 
               "avg_degree": 2,
-              "tolerance": [0.1, 0.7],
-              "num_recommended": [0, 7],
-              "num_neighbor_conn": 1,
+              "tolerance": [0.1, 0.3, 0.5, 0.7, 0.9],
+              "num_recommended": [0, 1, 7],
+              "num_neighbor_conn": [1, 5],
+              "radical": [True, False],
               "schedule_type": "Sequential"
               } 
 
@@ -22,9 +23,9 @@ parameters = {"num_agents": 20,
 # max_steps is how long to run the model
 results = batch_run(EchoChamberModel, 
                     parameters,
-                    iterations=50,  
-                    max_steps=10, 
-                    data_collection_period = 1) #how often do you want to pull the data
+                    iterations=10,  
+                    max_steps=20, 
+                    data_collection_period = 2) #how often do you want to pull the data
 
 
 
@@ -32,4 +33,4 @@ results = batch_run(EchoChamberModel,
 ## NOTE: to do data collection, you need to be sure your pathway is correct to save this!
 # Data collection
 # extract data as a pandas Data Frame
-pd.DataFrame(results).to_csv("batch_data.csv")
+pd.DataFrame(results).to_csv("batch_run_data.csv")
