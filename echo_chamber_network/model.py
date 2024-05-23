@@ -4,7 +4,6 @@ import numpy as np
 
 import mesa
 import networkx as nx
-from networkx.algorithms.components import connected_components
 
 
 class OpinionState(Enum):
@@ -16,11 +15,12 @@ class OpinionAgent(mesa.Agent):
     """
     Agent with an opinion and interactions based on tolerance to opinion differences.
     """
-    def __init__(self, unique_id, model, opinion, tolerance):
+    def __init__(self, unique_id, model, opinion, tolerance, radical):
         '''Each agent has an ID, an opinion state, and a tolerance'''
         super().__init__(unique_id, model)
         self.opinion = opinion
         self.tolerance = tolerance
+        self.radical = radical
 
     def step(self):
         '''At each step, each agent updates its opinion based on neighbors,
@@ -72,12 +72,19 @@ class OpinionAgent(mesa.Agent):
         prob_sum = 0
         for a in self.model.schedule.agents:
             if a not in current_neighbors:
-                rec_prob = 1 / (abs(a.opinion - self.opinion) + 1)
+                rec_prob = 1 - abs(a.opinion - self.opinion) + 0.00001
                 agents_rec_probs[a] = rec_prob
                 prob_sum += rec_prob
 
         
         agents_select_probs =  {agent: prob / prob_sum for agent, prob in agents_rec_probs.items()}
+
+        if self.radical:
+            if self.opinion > 0.5:
+                agents_select_probs = {a: p for a, p in agents_select_probs.items() if a.opinion > self.opinion}
+            elif self.opinion < 0.5:
+                agents_select_probs = {a: p for a, p in agents_select_probs.items() if a.opinion < self.opinion}
+
         
         try:
             selected_agents = np.random.choice(list(agents_select_probs.keys()), 
@@ -96,6 +103,8 @@ class OpinionAgent(mesa.Agent):
         # for agent in random.sample(potential_connections, min(len(potential_connections), self.model.num_recommended)):
         #     if abs(agent.opinion - self.opinion) < self.tolerance:
         #         self.model.G.add_edge(self.pos, agent.pos)
+        
+
 
 
 class EchoChamberModel(mesa.Model):
@@ -106,12 +115,13 @@ class EchoChamberModel(mesa.Model):
         "Simultaneous": mesa.time.SimultaneousActivation,
     }
     
-    def __init__(self, num_agents=20, avg_degree=3, tolerance=0.3, 
+    def __init__(self, num_agents=20, avg_degree=3, tolerance=0.3, radical=False,
                  num_recommended=5, num_neighbor_conn=1, schedule_type="Random"):
         super().__init__()
         self.num_agents = num_agents
         self.avg_degree = avg_degree
         self.tolerance = tolerance
+        self.radical = radical
         self.num_recommended = num_recommended
         self.num_neighbor_conn = num_neighbor_conn
         self.G = nx.erdos_renyi_graph(n=self.num_agents, p=self.avg_degree/(self.num_agents-1))
@@ -124,11 +134,11 @@ class EchoChamberModel(mesa.Model):
 
         self.datacollector = mesa.DataCollector(
             {
-                "Number_of_Clusters": lambda m: nx.number_connected_components(m.G),
                 "Opinion_Clustering_Coefficient": lambda m: m.calculate_opinion_clustering_coefficient(),
                 "Opinion_Homophily": lambda m: m.calculate_opinion_homophily(),
                 "Opinion_Modularity": lambda m: m.calculate_opinion_modularity(),
-                "Proportion_of_Uniform_Neighbors": lambda m: m.rate_uniform_opinion_neighbors()
+                "Proportion_of_Uniform_Neighbors": lambda m: m.rate_uniform_opinion_neighbors(),
+                "Average_Radicalization": lambda m: m.calculate_radicalization()[0],
             }
         )
         self.running = True
@@ -137,7 +147,7 @@ class EchoChamberModel(mesa.Model):
     def init_agents(self):
         for i, node in enumerate(self.G.nodes()):
             opinion = random.uniform(0, 1)
-            a = OpinionAgent(i, self, opinion, self.tolerance)
+            a = OpinionAgent(i, self, opinion, self.tolerance, self.radical)
             self.schedule.add(a)
             self.grid.place_agent(a, node)
 
@@ -172,12 +182,6 @@ class EchoChamberModel(mesa.Model):
 
         return uniform_rate
 
-    def step(self):
-        self.schedule.step()
-        rate_uniform = self.rate_uniform_opinion_neighbors()
-        self.num_clusters = nx.number_connected_components(self.G)
-        self.datacollector.collect(self)
-        # print(f"Model Step: {self._steps} at Model Time: {self._time}")
     
     def calculate_opinion_homophily(self):
         same_opinion_edges = 0
@@ -236,25 +240,43 @@ class EchoChamberModel(mesa.Model):
         for agent in self.schedule.agents:
             node = agent.unique_id
             neighbors = list(self.G.neighbors(node))
-            agent_state = self.determine_opinion_state(agent)  # Use existing function to determine the agent's opinion state
-
-            # Filter neighbors based on matching opinion state
-            state_similar_neighbors = [n for n in neighbors if self.determine_opinion_state(self.schedule.agents[n]) == agent_state]
-
+            similar_opinion_neighbors = []
+            for n in neighbors:
+                if isinstance(self.G.nodes[n]['agent'], list):
+                    if any(abs(a.opinion - agent.opinion) < self.tolerance for a in self.G.nodes[n]['agent']):
+                        similar_opinion_neighbors.append(n)
+                else:
+                    if abs(self.G.nodes[n]['agent'].opinion - agent.opinion) < self.tolerance:
+                        similar_opinion_neighbors.append(n)
+            
             if len(neighbors) < 2:
                 opinion_clustering_coefficients[node] = 0.0
             else:
                 connected_pairs = 0
-                for i in range(len(state_similar_neighbors)):
-                    for j in range(i + 1, len(state_similar_neighbors)):
-                        if self.G.has_edge(state_similar_neighbors[i], state_similar_neighbors[j]):
+                for i in range(len(similar_opinion_neighbors)):
+                    for j in range(i+1, len(similar_opinion_neighbors)):
+                        if self.G.has_edge(similar_opinion_neighbors[i], similar_opinion_neighbors[j]):
                             connected_pairs += 1
-
-                possible_pairs = len(state_similar_neighbors) * (len(state_similar_neighbors) - 1) / 2
+                
+                possible_pairs = len(similar_opinion_neighbors) * (len(similar_opinion_neighbors) - 1) / 2
                 if possible_pairs > 0:
                     opinion_clustering_coefficients[node] = connected_pairs / possible_pairs
                 else:
                     opinion_clustering_coefficients[node] = 0.0
-
+        
         avg_opinion_clustering_coef = sum(opinion_clustering_coefficients.values()) / len(opinion_clustering_coefficients)
         return avg_opinion_clustering_coef
+
+    def calculate_radicalization(self):
+        radicalizations = [abs(a.opinion - 0.5) for a in self.schedule.agents]
+        radicalization_avg = np.mean(radicalizations)
+        radicalization_std = np.std(radicalizations)
+
+        return radicalization_avg, radicalization_std
+
+
+    def step(self):
+        self.schedule.step()
+        rate_uniform = self.rate_uniform_opinion_neighbors()
+        self.num_clusters = nx.number_connected_components(self.G)
+        self.datacollector.collect(self)
