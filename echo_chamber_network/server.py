@@ -50,6 +50,10 @@ def get_clustering_coef(model):
     clustering_coef = model.datacollector.get_model_vars_dataframe()["Opinion_Clustering_Coefficient"].iloc[-1]
     return "Clustering Coefficient: {:.2f}".format(clustering_coef)
 
+def get_radicalization(model):
+    radicalization = model.datacollector.get_model_vars_dataframe()["Average_Radicalization"].iloc[-1]
+    return "Average Radicalization: {:.2f}".format(radicalization)
+
 
 network = mesa.visualization.NetworkModule(portrayal_method=network_portrayal,
                                            canvas_height=500, canvas_width=500)
@@ -60,6 +64,8 @@ model_params = {
     "avg_degree": mesa.visualization.Slider("Average Node Degree", 3, 1, 10, 1),
     "tolerance": mesa.visualization.Slider("Tolerance for Opinion Difference", 0.3, 0.0, 1.0, 0.05),
     "num_recommended": mesa.visualization.Slider("Number of Recommended Agents", 5, 0, 15, 1),
+    "radical": mesa.visualization.Choice("Radical Recommendation?",value=False,
+                                         choices=list([False, True])),
     "num_neighbor_conn": mesa.visualization.Slider("Number of Neighbor's Connections", 1, 1, 5, 1),
     "schedule_type": mesa.visualization.Choice("Scheduler type",value="Random",
                                                 choices=list(EchoChamberModel.schedule_types.keys()))
@@ -70,7 +76,8 @@ server = mesa.visualization.ModularServer(model_cls=EchoChamberModel,
                                                                   get_opinion_homophily,
                                                                   get_opinion_modularity,
                                                                   get_clustering_coef,
-                                                                  get_rate_of_uniform],
+                                                                  get_rate_of_uniform,
+                                                                  get_radicalization],
                                           name="Echo Chamber Model", 
                                           model_params=model_params)
 server.port = 8521
